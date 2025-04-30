@@ -19,11 +19,14 @@ app.use(express.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: true }));
 
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
-const SERVICE_ACCOUNT_FILE = path.join(__dirname, 'festive-nova-429210-b3-acf37ef44cdf.json');
+// const SERVICE_ACCOUNT_FILE = path.join(__dirname, 'festive-nova-429210-b3-acf37ef44cdf.json');
+const serviceAccount = JSON.parse(process.env.GOOGLE_SERVICE_JSON);
+
 const auth = new google.auth.GoogleAuth({
-  keyFile: SERVICE_ACCOUNT_FILE,
+  credentials: serviceAccount,
   scopes: SCOPES
 });
+
 
 const driveService = google.drive({ version: 'v3', auth });
 const ROOT_FOLDER_ID = '1v8KuHvik1BqXEJScTHygb2_w-y32tThW';
