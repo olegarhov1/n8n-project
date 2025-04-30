@@ -400,25 +400,28 @@ async function saveModalEdits() {
 
 async function addProduct() {
   const brand = document.getElementById("brand").value;
-  const category = document.getElementById("category").value;
-  const article = document.getElementById("article").value;
-  const images = document.getElementById("images").files;
-  const template = document.getElementById("template").value;
+const category = document.getElementById("category").value;
+const article = document.getElementById("article").value;
+const images = document.getElementById("images").files;
+const template = document.getElementById("template").value;
 
-  if (!brand || !category || !article || images.length === 0 || !template) {
-    return alert("⚠️ Заполните все поля");
-  }
+if (!brand || !category || !article || images.length === 0 || !template) {
+  return alert("⚠️ Заполните все поля");
+}
 
-  const description = template.replace('{{brand}}', brand);
+const subcategory = document.getElementById("template").selectedOptions[0].textContent.split(' ').pop();
+const description = template.replace('{{brand}}', brand);
 
-  const formData = new FormData();
-  formData.append("brand", brand);
-  formData.append("category", category);
-  formData.append("article", article);
-  formData.append("description", description);
-  formData.append("sizes", "");
-  formData.append("fabric", "");
-  formData.append("delivery", "");
+const formData = new FormData();
+formData.append("brand", brand);
+formData.append("category", category);
+formData.append("subcategory", subcategory);
+formData.append("article", article);
+formData.append("description", description);
+formData.append("sizes", "");
+formData.append("fabric", "");
+formData.append("delivery", "");
+
 
   for (const img of images) {
     formData.append("images", img);
