@@ -107,6 +107,14 @@ app.get('/api/products', (req, res) => {
   });
 });
 
+const publicPath = path.join(__dirname, 'public');
+app.use(express.static(publicPath));
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(publicPath, 'index.html'));
+});
+
+
 app.listen(PORT, () => {
   console.log(`🌐 Сервер запущен на http://localhost:${PORT}`);
 });
