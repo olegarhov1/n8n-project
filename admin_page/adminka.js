@@ -14,19 +14,33 @@ const app = express();
 const PORT = 5000;
 
 const db = new sqlite3.Database(path.join(__dirname, '..', 'products.db'));
+
+// 👉 Автоматическое создание таблицы products, если она не существует
+db.run(`
+  CREATE TABLE IF NOT EXISTS products (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    brand TEXT,
+    category TEXT,
+    article TEXT,
+    description TEXT,
+    sizes TEXT,
+    fabric TEXT,
+    delivery TEXT,
+    image_path TEXT
+  )
+`);
+
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: true }));
 
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
-// const SERVICE_ACCOUNT_FILE = path.join(__dirname, 'festive-nova-429210-b3-acf37ef44cdf.json');
 const serviceAccount = JSON.parse(process.env.GOOGLE_SERVICE_JSON);
 
 const auth = new google.auth.GoogleAuth({
   credentials: serviceAccount,
   scopes: SCOPES
 });
-
 
 const driveService = google.drive({ version: 'v3', auth });
 const ROOT_FOLDER_ID = '1v8KuHvik1BqXEJScTHygb2_w-y32tThW';
@@ -117,8 +131,6 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(publicPath, 'index.html'));
 });
 
-
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🌐 Сервер запущен на http://0.0.0.0:${PORT}`);
 });
-
