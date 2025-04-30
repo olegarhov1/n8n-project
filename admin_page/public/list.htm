@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Список товаров</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .fade-out {
+      opacity: 0;
+      transition: opacity 0.5s ease-out;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 p-4">
+  <h1 class="text-2xl font-bold mb-4">Список товаров</h1>
+  <table class="table-auto w-full bg-white shadow-md rounded">
+    <thead class="bg-gray-200">
+      <tr>
+        <th class="px-4 py-2 text-left">Бренд</th>
+        <th class="px-4 py-2 text-left">Категория</th>
+        <th class="px-4 py-2 text-left">Артикул</th>
+      </tr>
+    </thead>
+    <tbody id="productTable"></tbody>
+  </table>
+
+  <audio id="soundClick" src="/sounds/click.mp3"></audio>
+  <audio id="soundBoom" src="/sounds/boom.mp3"></audio>
+
+  <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white p-6 rounded-lg w-full max-w-xl overflow-y-auto max-h-[90vh]">
+      <h2 class="text-xl font-bold mb-4">Карточка товара</h2>
+      <div id="photoContainer" class="flex flex-wrap gap-2 mb-4"></div>
+      <p><b>Бренд:</b> <span id="modalBrand"></span></p>
+      <p><b>Категория:</b> <span id="modalCategory"></span></p>
+      <p><b>Артикул:</b> <span id="modalArticle"></span></p>
+      <label class="block mt-4">
+        <span class="text-sm font-semibold">Описание:</span>
+        <textarea id="modalDescription" class="w-full border rounded p-2 mt-1" rows="3"></textarea>
+      </label>
+      <label class="block mt-2">
+        <span class="text-sm font-semibold">Размеры:</span>
+        <input type="text" id="modalSizes" class="w-full border rounded p-2 mt-1" />
+      </label>
+      <label class="block mt-2">
+        <span class="text-sm font-semibold">Состав:</span>
+        <input type="text" id="modalFabric" class="w-full border rounded p-2 mt-1" />
+      </label>
+      <label class="block mt-2">
+        <span class="text-sm font-semibold">Доставка:</span>
+        <input type="text" id="modalDelivery" class="w-full border rounded p-2 mt-1" />
+      </label>
+      <div class="mt-4 text-sm text-gray-600">
+        <p><b>📏 Размеры:</b> <span id="modalPreviewSizes"></span></p>
+        <p><b>🧵 Состав:</b> <span id="modalPreviewFabric"></span></p>
+        <p><b>🚚 Доставка:</b> <span id="modalPreviewDelivery"></span></p>
+      </div>
+      <div class="mt-4 flex justify-between items-center">
+        <button onclick="deleteWholeArticle()" class="bg-red-600 text-white px-4 py-2 rounded">🗑 Удалить весь товар</button>
+        <div>
+          <button onclick="saveEdits()" class="bg-blue-500 text-white px-4 py-2 rounded mr-2">💾 Сохранить</button>
+          <button onclick="closeModal()" class="bg-gray-300 text-gray-800 px-4 py-2 rounded">Закрыть</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const tableBody = document.getElementById('productTable');
+  const modal = document.getElementById('modal');
+  const modalBrand = document.getElementById('modalBrand');
+  const modalCategory = document.getElementById('modalCategory');
+  const modalArticle = document.getElementById('modalArticle');
+  const modalDescription = document.getElementById('modalDescription');
+  const modalSizes = document.getElementById('modalSizes');
+  const modalFabric = document.getElementById('modalFabric');
+  const modalDelivery = document.getElementById('modalDelivery');
+  const modalPreviewSizes = document.getElementById('modalPreviewSizes');
+  const modalPreviewFabric = document.getElementById('modalPreviewFabric');
+  const modalPreviewDelivery = document.getElementById('modalPreviewDelivery');
+  const photoContainer = document.getElementById('photoContainer');
+  const soundClick = document.getElementById('soundClick');
+  const soundBoom = document.getElementById('soundBoom');
+
+  let currentProduct = null;
+
+  async function fetchProducts() {
+    const res = await fetch('/api/products');
+    const products = await res.json();
+    products.forEach(product => {
+      const row = document.createElement('tr');
+      row.classList.add('hover:bg-gray-100', 'cursor-pointer');
+      row.innerHTML = `
+        <td class="px-4 py-2">${product.brand}</td>
+        <td class="px-4 py-2">${product.category}</td>
+        <td class="px-4 py-2">${product.article}</td>
+      `;
+      row.addEventListener('click', () => openModal(product));
+      tableBody.appendChild(row);
+    });
+  }
+
+  function openModal(product) {
+    currentProduct = product;
+    modalBrand.textContent = product.brand;
+    modalCategory.textContent = product.category;
+    modalArticle.textContent = product.article;
+    modalDescription.value = product.description;
+    modalSizes.value = product.sizes;
+    modalFabric.value = product.fabric;
+    modalDelivery.value = product.delivery;
+    modalPreviewSizes.textContent = product.sizes || '—';
+    modalPreviewFabric.textContent = product.fabric || '—';
+    modalPreviewDelivery.textContent = product.delivery || '—';
+
+    photoContainer.innerHTML = '';
+    product.image_path_list.forEach((imgPath) => {
+      const div = document.createElement('div');
+      div.className = 'relative';
+      const img = document.createElement('img');
+      img.src = '/' + imgPath;
+      img.className = 'w-32 h-32 object-cover rounded';
+
+      const btn = document.createElement('button');
+      btn.textContent = '❌';
+      btn.className = 'absolute top-0 right-0 bg-red-600 text-white text-xs rounded px-1';
+      btn.onclick = () => deletePhoto(imgPath, div);
+
+      div.appendChild(img);
+      div.appendChild(btn);
+      photoContainer.appendChild(div);
+    });
+
+    modal.classList.remove('hidden');
+  }
+
+  async function deletePhoto(imagePath, container) {
+    const res = await fetch(`/api/photo?image_path=${encodeURIComponent(imagePath)}`, {
+      method: 'DELETE'
+    });
+
+    if (res.ok) {
+      soundClick.play();
+      container.classList.add('fade-out');
+      setTimeout(() => container.remove(), 500);
+    } else {
+      alert('❌ Ошибка при удалении фото');
+    }
+  }
+
+  async function deleteWholeArticle() {
+    if (!confirm('Удалить весь товар вместе с фото?')) return;
+    const res = await fetch(`/api/products/deleteByArticle/${currentProduct.article}?brand=${encodeURIComponent(currentProduct.brand)}&category=${encodeURIComponent(currentProduct.category)}`, {
+      method: 'DELETE'
+    });
+    if (res.ok) {
+      soundBoom.play();
+      modal.classList.add('fade-out');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.classList.remove('fade-out');
+        location.reload();
+      }, 600);
+    } else {
+      alert('Ошибка при удалении товара');
+    }
+  }
+
+  async function saveEdits() {
+    const updated = {
+      ...currentProduct,
+      description: modalDescription.value,
+      sizes: modalSizes.value,
+      fabric: modalFabric.value,
+      delivery: modalDelivery.value
+    };
+
+    const res = await fetch('/api/products/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updated)
+    });
+
+    if (res.ok) {
+      alert('✅ Описание обновлено');
+      modal.classList.add('hidden');
+      location.reload();
+    } else {
+      alert('❌ Ошибка при обновлении');
+    }
+  }
+
+  function closeModal() {
+    modal.classList.add('hidden');
+  }
+
+  fetchProducts();
+</script>
+</body>
+</html>
