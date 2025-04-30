@@ -264,7 +264,8 @@ function renderTable(data) {
   const tbody = document.getElementById("tableBody");
   tbody.innerHTML = "";
   data.forEach(product => {
-    const preview = product.image_path_list?.[0] ? '/' + product.image_path_list[0].replace(/\\/g, '/') : '';
+    const preview = product.image_path_list?.[0] || '';
+
     const tr = document.createElement("tr");
     tr.classList.add("cursor-pointer", "hover:bg-gray-100", "dark:hover:bg-gray-700", "dark:text-white");
     tr.innerHTML = `
